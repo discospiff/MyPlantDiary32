@@ -43,7 +43,7 @@ class ExampleUnitTest {
     }
 
     @Test
-    fun fivePlusSix_EqualsTen() {
-        assertEquals(10, 5 + 6)
+    fun fivePlusSix_EqualsEleven() {
+        assertEquals(11, 5 + 6)
     }
 }
