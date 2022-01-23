@@ -37,4 +37,8 @@ class ExampleUnitTest {
         assertEquals("Eastern Redbud", plant.toString())
     }
 
+    @Test
+    fun fivePlusFive_EqualsTen() {
+        assertEquals(10, 5 +5 )
+    }
 }
