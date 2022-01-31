@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">MyPlantDiary</string>
+    <string name="plantName">Plant Name</string>
+    <string name="location">Location</string>
+    <string name="description">Description</string>
+    <string name="datePlanted">Date Planted</string>
 </resources>
