@@ -2,6 +2,7 @@ package app.plantdiary
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import app.plantdiary.dto.Plant
+import app.plantdiary.service.PlantService
 import junit.framework.Assert.*
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -21,14 +22,13 @@ class PlantTests {
         givenPlantServiceIsInitialized()
         whenPlantDataAreReadAndParsed()
         thenThePlantCollectionShouldContainCercisCanadensis()
-
     }
 
     private fun givenPlantServiceIsInitialized() {
        plantService = PlantService()
     }
 
-    private fun whenPlantDataAreReadAndParsed() {
+    private suspend fun whenPlantDataAreReadAndParsed() {
         allPlants = plantService.fetchPlants()
     }
 
