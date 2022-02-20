@@ -166,6 +166,7 @@ class MainActivity() : ComponentActivity() {
                         description = inDescription
                         datePlanted = inDatePlanted
                     }
+                    viewModel.save(specimen)
                     Toast.makeText(
                         context,
                         "$inPlantName $inLocation $inDescription $inDatePlanted",
