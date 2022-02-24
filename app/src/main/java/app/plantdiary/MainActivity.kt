@@ -41,10 +41,7 @@ class MainActivity() : ComponentActivity() {
         setContent {
             viewModel.fetchPlants()
             val plants by viewModel.plants.observeAsState(initial = emptyList())
-            val specimens = ArrayList<Specimen>()
-            specimens.add(Specimen(plantName = "Beautiful Redbud"))
-            specimens.add(Specimen(plantName = "Flowering Cherry"))
-            specimens.add(Specimen(plantName = "Large Red Oak"))
+            val specimens by viewModel.specimens.observeAsState(initial = emptyList())
             MyPlantDiaryTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(

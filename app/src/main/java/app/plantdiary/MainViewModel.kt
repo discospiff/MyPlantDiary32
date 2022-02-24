@@ -15,12 +15,38 @@ import kotlinx.coroutines.launch
 class MainViewModel(var plantService : IPlantService =  PlantService()) : ViewModel() {
 
     var plants : MutableLiveData<List<Plant>> = MutableLiveData<List<Plant>>()
+    var specimens: MutableLiveData<List<Specimen>> = MutableLiveData<List<Specimen>>()
 
     private lateinit var firestore : FirebaseFirestore
 
     init {
         firestore = FirebaseFirestore.getInstance()
         firestore.firestoreSettings = FirebaseFirestoreSettings.Builder().build()
+        listenToSpecimens()
+    }
+
+    private fun listenToSpecimens() {
+        firestore.collection("specimens").addSnapshotListener {
+            snapshot, e ->
+            // handle the error if there is one, and then return
+            if (e != null) {
+                Log.w("Listen failed", e)
+                return@addSnapshotListener
+            }
+            // if we reached this point , there was not an error
+            snapshot?.let {
+                val allSpecimens = ArrayList<Specimen>()
+                val documents = snapshot.documents
+                documents.forEach {
+                    val specimen = it.toObject(Specimen::class.java)
+                    specimen?.let {
+                        allSpecimens.add(it)
+                    }
+                }
+                specimens.value = allSpecimens
+            }
+        }
+
     }
 
     fun fetchPlants() {
