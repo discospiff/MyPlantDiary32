@@ -31,7 +31,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity() : ComponentActivity() {
 
-    private var selectedSpecimen by mutableStateOf(Specimen())
+
     private var selectedPlant: Plant? = null
     private val viewModel: MainViewModel by viewModel<MainViewModel>()
     private var inPlantName: String = ""
@@ -48,7 +48,7 @@ class MainActivity() : ComponentActivity() {
                     color = MaterialTheme.colors.background,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    SpecimenFacts("Android", plants, specimens, selectedSpecimen)
+                    SpecimenFacts("Android", plants, specimens, viewModel.selectedSpecimen)
                 }
             }
         }
@@ -73,11 +73,20 @@ class MainActivity() : ComponentActivity() {
                 DropdownMenu(expanded = expanded, onDismissRequest = {expanded = false}) {
                     specimens.forEach {
                         specimen -> DropdownMenuItem(onClick = {
-                            expanded = false
-                        specimenText = specimen.toString()
-                        selectedSpecimen = specimen
-                        selectedPlant = Plant(genus = "", species = "", common = specimen.plantName, id = specimen.plantId)
-                        inPlantName = specimen.plantName
+                        expanded = false
+
+                        if (specimen.plantName == viewModel.NEW_SPECIMEN) {
+                            // we have a new specimen
+                            specimenText = ""
+                            specimen.plantName = ""
+
+                        } else {
+                            // we have selected an existing specimen.
+                            specimenText = specimen.toString()
+                            selectedPlant = Plant(genus = "", species = "", common = specimen.plantName, id = specimen.plantId)
+                            inPlantName = specimen.plantName
+                        }
+                        viewModel.selectedSpecimen = specimen
                     }) {
                             Text(text = specimen.toString())
                     }
@@ -205,7 +214,7 @@ class MainActivity() : ComponentActivity() {
                         description = inDescription
                         datePlanted = inDatePlanted
                     }
-                    viewModel.save(selectedSpecimen)
+                    viewModel.saveSpecimen()
                     Toast.makeText(
                         context,
                         "$inPlantName $inLocation $inDescription $inDatePlanted",

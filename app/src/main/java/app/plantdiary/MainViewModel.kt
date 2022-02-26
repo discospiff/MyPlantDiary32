@@ -1,6 +1,9 @@
 package app.plantdiary
 
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,8 +17,10 @@ import kotlinx.coroutines.launch
 
 class MainViewModel(var plantService : IPlantService =  PlantService()) : ViewModel() {
 
+    internal val NEW_SPECIMEN = "New Specimen"
     var plants : MutableLiveData<List<Plant>> = MutableLiveData<List<Plant>>()
     var specimens: MutableLiveData<List<Specimen>> = MutableLiveData<List<Specimen>>()
+    var selectedSpecimen by mutableStateOf(Specimen())
 
     private lateinit var firestore : FirebaseFirestore
 
@@ -36,6 +41,7 @@ class MainViewModel(var plantService : IPlantService =  PlantService()) : ViewMo
             // if we reached this point , there was not an error
             snapshot?.let {
                 val allSpecimens = ArrayList<Specimen>()
+                allSpecimens.add(Specimen(plantName = NEW_SPECIMEN))
                 val documents = snapshot.documents
                 documents.forEach {
                     val specimen = it.toObject(Specimen::class.java)
@@ -57,16 +63,16 @@ class MainViewModel(var plantService : IPlantService =  PlantService()) : ViewMo
 
     }
 
-    fun save(specimen: Specimen) {
-        val document = if (specimen.specimenId == null || specimen.specimenId.isEmpty()) {
+    fun saveSpecimen() {
+        val document = if (selectedSpecimen.specimenId == null || selectedSpecimen.specimenId.isEmpty()) {
             // create a new specimen
             firestore.collection("specimens").document()
         } else {
             // update an existing specimen.
-            firestore.collection("specimens").document(specimen.specimenId)
+            firestore.collection("specimens").document(selectedSpecimen.specimenId)
         }
-        specimen.specimenId = document.id
-        val handle = document.set(specimen)
+        selectedSpecimen.specimenId = document.id
+        val handle = document.set(selectedSpecimen)
         handle.addOnSuccessListener { Log.d("Firebase", "Document Saved") }
         handle.addOnFailureListener { Log.e("Firebase", "Save failed $it ")}
     }
