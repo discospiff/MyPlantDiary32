@@ -76,6 +76,8 @@ class MainActivity() : ComponentActivity() {
                             expanded = false
                         specimenText = specimen.toString()
                         selectedSpecimen = specimen
+                        selectedPlant = Plant(genus = "", species = "", common = specimen.plantName, id = specimen.plantId)
+                        inPlantName = specimen.plantName
                     }) {
                             Text(text = specimen.toString())
                     }
@@ -194,7 +196,7 @@ class MainActivity() : ComponentActivity() {
             )
             Button(
                 onClick = {
-                    var specimen = Specimen().apply {
+                    selectedSpecimen.apply {
                         plantName = inPlantName
                         plantId = selectedPlant?.let {
                             it.id
@@ -203,7 +205,7 @@ class MainActivity() : ComponentActivity() {
                         description = inDescription
                         datePlanted = inDatePlanted
                     }
-                    viewModel.save(specimen)
+                    viewModel.save(selectedSpecimen)
                     Toast.makeText(
                         context,
                         "$inPlantName $inLocation $inDescription $inDatePlanted",
