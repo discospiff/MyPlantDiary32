@@ -5,13 +5,15 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
@@ -19,6 +21,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
 import app.plantdiary.dto.Plant
 import app.plantdiary.dto.Specimen
@@ -26,6 +30,7 @@ import app.plantdiary.ui.theme.MyPlantDiaryTheme
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity() : ComponentActivity() {
+
 
     private var selectedPlant: Plant? = null
     private val viewModel: MainViewModel by viewModel<MainViewModel>()
@@ -36,24 +41,66 @@ class MainActivity() : ComponentActivity() {
         setContent {
             viewModel.fetchPlants()
             val plants by viewModel.plants.observeAsState(initial = emptyList())
+            val specimens by viewModel.specimens.observeAsState(initial = emptyList())
             MyPlantDiaryTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     color = MaterialTheme.colors.background,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    SpecimenFacts("Android", plants)
+                    SpecimenFacts("Android", plants, specimens, viewModel.selectedSpecimen)
                 }
             }
         }
     }
 
+    @Composable
+    fun SpecimenSpinner (specimens: List<Specimen>) {
+        var specimenText by remember {mutableStateOf("Specimen Collection")}
+        var expanded by remember { mutableStateOf(false)}
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Row(Modifier
+                .padding(24.dp)
+                .clickable {
+                    expanded = !expanded
+                }
+                .padding(8.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = specimenText, fontSize = 18.sp, modifier = Modifier.padding(end = 8.dp))
+                Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = "")
+                DropdownMenu(expanded = expanded, onDismissRequest = {expanded = false}) {
+                    specimens.forEach {
+                        specimen -> DropdownMenuItem(onClick = {
+                        expanded = false
+
+                        if (specimen.plantName == viewModel.NEW_SPECIMEN) {
+                            // we have a new specimen
+                            specimenText = ""
+                            specimen.plantName = ""
+
+                        } else {
+                            // we have selected an existing specimen.
+                            specimenText = specimen.toString()
+                            selectedPlant = Plant(genus = "", species = "", common = specimen.plantName, id = specimen.plantId)
+                            inPlantName = specimen.plantName
+                        }
+                        viewModel.selectedSpecimen = specimen
+                    }) {
+                            Text(text = specimen.toString())
+                    }
+                    }
+                }
+            }
+        }
+    }
 
     @Composable
-    fun TextFieldWithDropdownUsage(dataIn: List<Plant>, label : String = "", take :Int = 3) {
+    fun TextFieldWithDropdownUsage(dataIn: List<Plant>, label : String = "", take :Int = 3, selectedSpecimen : Specimen = Specimen()) {
 
         val dropDownOptions = remember { mutableStateOf(listOf<Plant>()) }
-        val textFieldValue = remember { mutableStateOf(TextFieldValue()) }
+        val textFieldValue = remember(selectedSpecimen.specimenId) { mutableStateOf(TextFieldValue(selectedSpecimen.plantName)) }
         val dropDownExpanded = remember { mutableStateOf(false) }
 
         fun onDropdownDismissRequest() {
@@ -130,13 +177,14 @@ class MainActivity() : ComponentActivity() {
     }
 
     @Composable
-    fun SpecimenFacts(name: String, plants : List<Plant> = ArrayList<Plant>()) {
-        var inLocation by remember { mutableStateOf("") }
-        var inDescription by remember { mutableStateOf("") }
-        var inDatePlanted by remember { mutableStateOf("") }
+    fun SpecimenFacts(name: String, plants : List<Plant> = ArrayList<Plant>(), specimens: List<Specimen> = ArrayList<Specimen>(), selectedSpecimen : Specimen = Specimen() ) {
+        var inLocation by remember(selectedSpecimen.specimenId) { mutableStateOf(selectedSpecimen.location) }
+        var inDescription by remember(selectedSpecimen.specimenId) { mutableStateOf(selectedSpecimen.description) }
+        var inDatePlanted by remember(selectedSpecimen.specimenId) { mutableStateOf(selectedSpecimen.datePlanted) }
         val context = LocalContext.current
         Column {
-            TextFieldWithDropdownUsage(dataIn = plants, stringResource(R.string.plantName))
+            SpecimenSpinner(specimens = specimens)
+            TextFieldWithDropdownUsage(dataIn = plants, label =  stringResource(R.string.plantName), selectedSpecimen  = selectedSpecimen)
             OutlinedTextField(
                 value = inLocation,
                 onValueChange = { inLocation = it },
@@ -157,7 +205,7 @@ class MainActivity() : ComponentActivity() {
             )
             Button(
                 onClick = {
-                    var specimen = Specimen().apply {
+                    selectedSpecimen.apply {
                         plantName = inPlantName
                         plantId = selectedPlant?.let {
                             it.id
@@ -166,7 +214,7 @@ class MainActivity() : ComponentActivity() {
                         description = inDescription
                         datePlanted = inDatePlanted
                     }
-                    viewModel.save(specimen)
+                    viewModel.saveSpecimen()
                     Toast.makeText(
                         context,
                         "$inPlantName $inLocation $inDescription $inDatePlanted",
