@@ -2,6 +2,7 @@ package app.plantdiary
 
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -27,11 +28,17 @@ import androidx.compose.ui.window.PopupProperties
 import app.plantdiary.dto.Plant
 import app.plantdiary.dto.Specimen
 import app.plantdiary.ui.theme.MyPlantDiaryTheme
+import com.firebase.ui.auth.AuthUI
+import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
+import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity() : ComponentActivity() {
 
 
+    private var user: FirebaseUser? = FirebaseAuth.getInstance().currentUser
     private var selectedPlant: Plant? = null
     private val viewModel: MainViewModel by viewModel<MainViewModel>()
     private var inPlantName: String = ""
@@ -223,9 +230,18 @@ class MainActivity() : ComponentActivity() {
                 }
             ) {
                 Text(text = "Save")
+
+            }
+            Button(
+                onClick = {
+                    signIn()
+                }
+            ) {
+                Text(text = "Logon")
             }
         }
     }
+
 
     @Preview(name = "Light Mode", showBackground = true)
     @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true, name = "Dark Mode")
@@ -241,4 +257,34 @@ class MainActivity() : ComponentActivity() {
             }
         }
     }
+
+    private fun signIn() {
+        val providers = arrayListOf(
+            AuthUI.IdpConfig.EmailBuilder().build()
+        )
+        val signinIntent = AuthUI.getInstance()
+            .createSignInIntentBuilder()
+            .setAvailableProviders(providers)
+            .build()
+
+        signInLauncher.launch(signinIntent)
+    }
+
+    private val signInLauncher = registerForActivityResult (
+        FirebaseAuthUIActivityResultContract()
+    ) {
+        res -> this.signInResult(res)
+    }
+    
+    
+    private fun signInResult(result: FirebaseAuthUIAuthenticationResult) {
+        val response = result.idpResponse
+        if (result.resultCode == RESULT_OK) {
+            user = FirebaseAuth.getInstance().currentUser
+        } else {
+            Log.e("MainActivity.kt", "Error logging in " + response?.error?.errorCode)
+
+        }
+    }
+
 }
