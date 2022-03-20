@@ -4,4 +4,5 @@
     <string name="location">Location</string>
     <string name="description">Description</string>
     <string name="datePlanted">Date Planted</string>
+    <string name="cameraPermissionDenied">Unable to load camera without permission.</string>
 </resources>
