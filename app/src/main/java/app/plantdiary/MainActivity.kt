@@ -119,6 +119,7 @@ class MainActivity() : ComponentActivity() {
                             inPlantName = specimen.plantName
                         }
                         viewModel.selectedSpecimen = specimen
+                        viewModel.fetchPhotos()
                     }) {
                             Text(text = specimen.toString())
                     }
