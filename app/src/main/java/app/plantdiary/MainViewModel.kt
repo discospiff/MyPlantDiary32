@@ -28,6 +28,7 @@ class MainViewModel(var plantService : IPlantService =  PlantService()) : ViewMo
     var specimens: MutableLiveData<List<Specimen>> = MutableLiveData<List<Specimen>>()
     var selectedSpecimen by mutableStateOf(Specimen())
     var user : User? = null
+    val eventPhotos : MutableLiveData<List<Photo>> = MutableLiveData<List<Photo>>()
 
     private lateinit var firestore : FirebaseFirestore
     private var storageReference = FirebaseStorage.getInstance().getReference()
@@ -118,14 +119,18 @@ class MainViewModel(var plantService : IPlantService =  PlantService()) : ViewMo
         }
     }
 
-    private fun updatePhotoDatabase(photo: Photo) {
+    internal fun updatePhotoDatabase(photo: Photo) {
         user?.let {
             user ->
-            var photoCollection = firestore.collection("users").document(user.uid).collection("specimens").document(selectedSpecimen.specimenId).collection("photos")
-            var handle = photoCollection.add(photo)
+            var photoDocument = if (photo.id.isEmpty()) {
+                firestore.collection("users").document(user.uid).collection("specimens").document(selectedSpecimen.specimenId).collection("photos").document()
+            } else {
+                firestore.collection("users").document(user.uid).collection("specimens").document(selectedSpecimen.specimenId).collection("photos").document(photo.id)
+            }
+            photo.id = photoDocument.id
+            var handle = photoDocument.set(photo)
             handle.addOnSuccessListener {
                 Log.i(TAG, "Successfully updated photo metadata")
-                photo.id = it.id
                 firestore.collection("users").document(user.uid).collection("specimens").document(selectedSpecimen.specimenId).collection("photos").document(photo.id).set(photo)
             }
             handle.addOnFailureListener {
@@ -145,7 +150,6 @@ class MainViewModel(var plantService : IPlantService =  PlantService()) : ViewMo
     }
 
     fun fetchPhotos() {
-        photos.clear()
         user?.let {
             user ->
             var photoCollection = firestore.collection("users").document(user.uid).collection("specimens").document(selectedSpecimen.specimenId).collection("photos")
@@ -154,12 +158,13 @@ class MainViewModel(var plantService : IPlantService =  PlantService()) : ViewMo
                 querySnapshot?.let {
                     querySnapshot ->
                     var documents = querySnapshot.documents
+                    var inPhotos = ArrayList<Photo>()
                     documents?.forEach {
                         var photo = it.toObject(Photo::class.java)
                         photo?.let {
-                            photos.add(it)
-                        }
+                            inPhotos.add(photo)                      }
                     }
+                    eventPhotos.value = inPhotos
                 }
             }
         }
