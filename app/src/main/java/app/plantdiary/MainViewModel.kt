@@ -126,12 +126,12 @@ class MainViewModel(var plantService : IPlantService =  PlantService()) : ViewMo
                 firestore.collection("users").document(user.uid).collection("specimens").document(selectedSpecimen.specimenId).collection("photos").document()
             } else {
                 firestore.collection("users").document(user.uid).collection("specimens").document(selectedSpecimen.specimenId).collection("photos").document(photo.id)
+
             }
             photo.id = photoDocument.id
             var handle = photoDocument.set(photo)
             handle.addOnSuccessListener {
                 Log.i(TAG, "Successfully updated photo metadata")
-                firestore.collection("users").document(user.uid).collection("specimens").document(selectedSpecimen.specimenId).collection("photos").document(photo.id).set(photo)
             }
             handle.addOnFailureListener {
                 Log.e(TAG, "Error updating photo data: ${it.message}")
@@ -151,22 +151,40 @@ class MainViewModel(var plantService : IPlantService =  PlantService()) : ViewMo
 
     fun fetchPhotos() {
         user?.let {
-            user ->
+                user ->
             var photoCollection = firestore.collection("users").document(user.uid).collection("specimens").document(selectedSpecimen.specimenId).collection("photos")
             var photosListener = photoCollection.addSnapshotListener {
-                querySnapshot, firebaseFirestoreException ->
+                    querySnapshot, firebaseFirestoreException ->
                 querySnapshot?.let {
-                    querySnapshot ->
+                        querySnapshot ->
                     var documents = querySnapshot.documents
                     var inPhotos = ArrayList<Photo>()
                     documents?.forEach {
                         var photo = it.toObject(Photo::class.java)
                         photo?.let {
-                            inPhotos.add(photo)                      }
+                            inPhotos.add(it)
+                        }
                     }
                     eventPhotos.value = inPhotos
                 }
             }
+        }
+    }
+
+    fun delete(photo: Photo) {
+        user?.let {
+            user ->
+            var photoCollection = firestore.collection("users").document(user.uid).collection("specimens").document(selectedSpecimen.specimenId).collection("photos")
+            photoCollection.document(photo.id).delete()
+            val uri = Uri.parse(photo.localUri)
+            val imageRef = storageReference.child("images/${user.uid}/${uri.lastPathSegment}")
+            imageRef.delete()
+                .addOnSuccessListener {
+                    Log.i(TAG, "Photo binary file deleted ${photo}")
+                }
+                .addOnFailureListener {
+                    Log.e(TAG, "Photo delete failed.  ${it.message}")
+                }
         }
     }
 }

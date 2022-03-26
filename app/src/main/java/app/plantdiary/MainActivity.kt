@@ -54,6 +54,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Delete
 
 class MainActivity() : ComponentActivity() {
 
@@ -330,8 +331,23 @@ class MainActivity() : ComponentActivity() {
                         modifier = Modifier.padding(end=8.dp)
                     )
                 }
+                Button (
+                    onClick = {
+                        delete(photo)
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = "Delete",
+                        modifier = Modifier.padding(end=8.dp)
+                    )
+                }
             }
         }
+    }
+
+    private fun delete(photo: Photo) {
+        viewModel.delete(photo)
     }
 
     private fun save(photo: Photo) {
