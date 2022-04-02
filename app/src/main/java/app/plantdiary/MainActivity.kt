@@ -1,7 +1,6 @@
 package app.plantdiary
 
 import android.Manifest
-import android.app.Instrumentation
 import android.content.ContentValues.TAG
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.content.res.Configuration
@@ -34,10 +33,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import app.plantdiary.dto.Photo
-import app.plantdiary.dto.Plant
-import app.plantdiary.dto.Specimen
-import app.plantdiary.dto.User
+import app.plantdiary.dto.*
 import app.plantdiary.ui.theme.MyPlantDiaryTheme
 import coil.compose.AsyncImage
 import com.firebase.ui.auth.AuthUI
@@ -61,6 +57,7 @@ class MainActivity() : ComponentActivity() {
     private val viewModel: MainViewModel by viewModel<MainViewModel>()
     private var inPlantName: String = ""
     private var strUri by mutableStateOf("")
+    private val applicationViewModel : ApplicationViewModel by viewModel<ApplicationViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,16 +71,39 @@ class MainActivity() : ComponentActivity() {
 
             val plants by viewModel.plants.observeAsState(initial = emptyList())
             val specimens by viewModel.specimens.observeAsState(initial = emptyList())
+            val location by applicationViewModel.getLocationLiveData().observeAsState()
             MyPlantDiaryTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     color = MaterialTheme.colors.background,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    SpecimenFacts("Android", plants, specimens, viewModel.selectedSpecimen)
+                    SpecimenFacts("Android", plants, specimens, viewModel.selectedSpecimen, location)
                 }
             }
+            prepLocationUpdates()
         }
+    }
+
+    private fun prepLocationUpdates() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PERMISSION_GRANTED) {
+            requestLocationUpdates()
+        } else {
+            requestSinglePermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    }
+
+    private val requestSinglePermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        isGranted ->
+        if (isGranted) {
+            requestLocationUpdates()
+        } else {
+            Toast.makeText(this, "GPS Unavailable", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun requestLocationUpdates() {
+        applicationViewModel.startLocationUpdates()
     }
 
     @Composable
@@ -209,13 +229,20 @@ class MainActivity() : ComponentActivity() {
     }
 
     @Composable
-    fun SpecimenFacts(name: String, plants : List<Plant> = ArrayList<Plant>(), specimens: List<Specimen> = ArrayList<Specimen>(), selectedSpecimen : Specimen = Specimen() ) {
+    fun SpecimenFacts(
+        name: String,
+        plants: List<Plant> = ArrayList<Plant>(),
+        specimens: List<Specimen> = ArrayList<Specimen>(),
+        selectedSpecimen: Specimen = Specimen(),
+        currentLocation: LocationDetails?
+    ) {
         var inLocation by remember(selectedSpecimen.specimenId) { mutableStateOf(selectedSpecimen.location) }
         var inDescription by remember(selectedSpecimen.specimenId) { mutableStateOf(selectedSpecimen.description) }
         var inDatePlanted by remember(selectedSpecimen.specimenId) { mutableStateOf(selectedSpecimen.datePlanted) }
         val context = LocalContext.current
         Column {
             SpecimenSpinner(specimens = specimens)
+            GPS(currentLocation)
             TextFieldWithDropdownUsage(
                 dataIn = plants,
                 label = stringResource(R.string.plantName),
@@ -250,6 +277,11 @@ class MainActivity() : ComponentActivity() {
                             location = inLocation
                             description = inDescription
                             datePlanted = inDatePlanted
+                            currentLocation?.let {
+                                currentLocation ->
+                                latitude = currentLocation.latitude
+                                longitude = currentLocation.longitude
+                            }
                         }
                         viewModel.saveSpecimen()
                         Toast.makeText(
@@ -269,17 +301,26 @@ class MainActivity() : ComponentActivity() {
                 ) {
                     Text(text = "Logon")
                 }
-            }
-            Button(
-                onClick = {
-                    takePhoto()
+                Button(
+                    onClick = {
+                        takePhoto()
+                    }
+                ) {
+                    Text(text = "Photo")
                 }
-            ) {
-                Text(text = "Photo")
             }
+
             AsyncImage(model = strUri, contentDescription= "Specimen Image")
         }
 
+    }
+
+    private @Composable
+    fun GPS(location: LocationDetails?) {
+        location?.let {
+            Text(text = location.latitude)
+            Text(text = location.longitude)
+        }
     }
 
     private fun takePhoto() {
@@ -364,7 +405,7 @@ class MainActivity() : ComponentActivity() {
                 color = MaterialTheme.colors.background,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                SpecimenFacts("Android")
+                // SpecimenFacts("Android")
             }
         }
     }
