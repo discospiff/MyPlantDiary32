@@ -2,6 +2,7 @@ package app.plantdiary
 
 import android.Manifest
 import android.content.ContentValues.TAG
+import android.content.Intent
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.content.res.Configuration
 import android.net.Uri
@@ -240,6 +241,7 @@ class MainActivity() : ComponentActivity() {
         var inDescription by remember(selectedSpecimen.specimenId) { mutableStateOf(selectedSpecimen.description) }
         var inDatePlanted by remember(selectedSpecimen.specimenId) { mutableStateOf(selectedSpecimen.datePlanted) }
         val context = LocalContext.current
+        val localContext = LocalContext.current
         Column {
             SpecimenSpinner(specimens = specimens)
             GPS(currentLocation)
@@ -307,6 +309,13 @@ class MainActivity() : ComponentActivity() {
                     }
                 ) {
                     Text(text = "Photo")
+                }
+                Button(
+                    onClick = {
+                        localContext.startActivity(Intent(localContext, SpecimenMapsActivity::class.java))
+                    }
+                ) {
+                    Text(text = "Map")
                 }
             }
 

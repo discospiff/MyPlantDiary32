@@ -26,6 +26,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".SpecimenMapsActivity"/>
         <provider
             android:authorities="${applicationId}.fileprovider"
             android:name="androidx.core.content.FileProvider"
@@ -38,6 +39,10 @@
                 />
 
         </provider>
+        <meta-data
+            android:name="com.google.android.maps.v2.API_KEY"
+            android:value="AIzaSyCXduF2yJgvWrw4V8bpLnd87a6Zmb-icm8"
+            />
     </application>
 
 </manifest>
