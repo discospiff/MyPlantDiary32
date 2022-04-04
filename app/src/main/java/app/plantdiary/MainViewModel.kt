@@ -22,12 +22,13 @@ import kotlinx.coroutines.launch
 
 class MainViewModel(var plantService : IPlantService =  PlantService()) : ViewModel() {
 
-    val photos: ArrayList<Photo> = ArrayList<Photo>()
+    val photos: ArrayList<Photo> by mutableStateOf(ArrayList<Photo>())
     internal val NEW_SPECIMEN = "New Specimen"
     var plants : MutableLiveData<List<Plant>> = MutableLiveData<List<Plant>>()
     var specimens: MutableLiveData<List<Specimen>> = MutableLiveData<List<Specimen>>()
     var selectedSpecimen by mutableStateOf(Specimen())
     var user : User? = null
+    val eventPhotos : MutableLiveData<List<Photo>> = MutableLiveData<List<Photo>>()
 
     private lateinit var firestore : FirebaseFirestore
     private var storageReference = FirebaseStorage.getInstance().getReference()
@@ -118,15 +119,19 @@ class MainViewModel(var plantService : IPlantService =  PlantService()) : ViewMo
         }
     }
 
-    private fun updatePhotoDatabase(photo: Photo) {
+    internal fun updatePhotoDatabase(photo: Photo) {
         user?.let {
             user ->
-            var photoCollection = firestore.collection("users").document(user.uid).collection("specimens").document(selectedSpecimen.specimenId).collection("photos")
-            var handle = photoCollection.add(photo)
+            var photoDocument = if (photo.id.isEmpty()) {
+                firestore.collection("users").document(user.uid).collection("specimens").document(selectedSpecimen.specimenId).collection("photos").document()
+            } else {
+                firestore.collection("users").document(user.uid).collection("specimens").document(selectedSpecimen.specimenId).collection("photos").document(photo.id)
+
+            }
+            photo.id = photoDocument.id
+            var handle = photoDocument.set(photo)
             handle.addOnSuccessListener {
                 Log.i(TAG, "Successfully updated photo metadata")
-                photo.id = it.id
-                firestore.collection("users").document(user.uid).collection("specimens").document(selectedSpecimen.specimenId).collection("photos").document(photo.id).set(photo)
             }
             handle.addOnFailureListener {
                 Log.e(TAG, "Error updating photo data: ${it.message}")
@@ -141,6 +146,45 @@ class MainViewModel(var plantService : IPlantService =  PlantService()) : ViewMo
             val handle = firestore.collection("users").document(user.uid).set(user)
             handle.addOnSuccessListener { Log.d("Firebase", "Document Saved") }
             handle.addOnFailureListener { Log.e("Firebase", "Save failed $it ") }
+        }
+    }
+
+    fun fetchPhotos() {
+        user?.let {
+                user ->
+            var photoCollection = firestore.collection("users").document(user.uid).collection("specimens").document(selectedSpecimen.specimenId).collection("photos")
+            var photosListener = photoCollection.addSnapshotListener {
+                    querySnapshot, firebaseFirestoreException ->
+                querySnapshot?.let {
+                        querySnapshot ->
+                    var documents = querySnapshot.documents
+                    var inPhotos = ArrayList<Photo>()
+                    documents?.forEach {
+                        var photo = it.toObject(Photo::class.java)
+                        photo?.let {
+                            inPhotos.add(it)
+                        }
+                    }
+                    eventPhotos.value = inPhotos
+                }
+            }
+        }
+    }
+
+    fun delete(photo: Photo) {
+        user?.let {
+            user ->
+            var photoCollection = firestore.collection("users").document(user.uid).collection("specimens").document(selectedSpecimen.specimenId).collection("photos")
+            photoCollection.document(photo.id).delete()
+            val uri = Uri.parse(photo.localUri)
+            val imageRef = storageReference.child("images/${user.uid}/${uri.lastPathSegment}")
+            imageRef.delete()
+                .addOnSuccessListener {
+                    Log.i(TAG, "Photo binary file deleted ${photo}")
+                }
+                .addOnFailureListener {
+                    Log.e(TAG, "Photo delete failed.  ${it.message}")
+                }
         }
     }
 }
