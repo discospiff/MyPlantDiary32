@@ -20,11 +20,11 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.launch
 
-class MainViewModel(var plantService : IPlantService =  PlantService()) : ViewModel() {
+class MainViewModel(var plantService : IPlantService) : ViewModel() {
 
     val photos: ArrayList<Photo> by mutableStateOf(ArrayList<Photo>())
     internal val NEW_SPECIMEN = "New Specimen"
-    var plants : MutableLiveData<List<Plant>> = MutableLiveData<List<Plant>>()
+    var plants = plantService.getLocalPlantDAO().getAllPlants()
     var specimens: MutableLiveData<List<Specimen>> = MutableLiveData<List<Specimen>>()
     var selectedSpecimen by mutableStateOf(Specimen())
     var user : User? = null
@@ -68,8 +68,8 @@ class MainViewModel(var plantService : IPlantService =  PlantService()) : ViewMo
 
     fun fetchPlants() {
         viewModelScope.launch {
-            var innerPlants = plantService.fetchPlants()
-            plants.postValue(innerPlants)
+             plantService.fetchPlants()
+
         }
 
     }

@@ -9,5 +9,5 @@ import org.koin.dsl.module
 val appModule = module {
     single { MainViewModel(get()) }
     viewModel { ApplicationViewModel(androidApplication())}
-    single<IPlantService> { PlantService() }
+    single<IPlantService> { PlantService(androidApplication()) }
 }

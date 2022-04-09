@@ -2,6 +2,7 @@ plugins {
     id 'com.android.application'
     id 'kotlin-android'
     id 'com.google.gms.google-services'
+    id 'kotlin-kapt'
 }
 
 android {
@@ -81,4 +82,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-auth:19.2.0'
     implementation("io.coil-kt:coil-compose:2.0.0-rc01")
     implementation 'com.google.firebase:firebase-storage-ktx'
+    def room_version = "2.4.2"
+    implementation "androidx.room:room-runtime:$room_version"
+    kapt("androidx.room:room-compiler:$room_version")
 }
