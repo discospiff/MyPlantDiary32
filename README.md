@@ -1,4 +1,4 @@
-# MyPlantDiary32
+# MyPlantDiary32 : GPS and Google Maps
 
 ## Learning Outcomes
 At the end of this module, you will be able to do the following:
@@ -11,3 +11,5 @@ At the end of this module, you will be able to do the following:
 - Annotate our Data Class so that it can be persisted with Room.
 - Update Koin to inject an Application object in PlantService.
 - Source our AutoComplete data from a local Room database.
+
+[![GPS and Google Maps Walk the Board](http://img.youtube.com/vi/AFQm8o1-JmU/0.jpg)](http://www.youtube.com/watch?v=AFQm8o1-JmU "Walk the Board: Capture GPS Information, Show Google Map, Integrate with LiveData")
